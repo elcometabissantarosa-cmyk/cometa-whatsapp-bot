@@ -6,6 +6,7 @@ import os
 import sqlite3
 import time
 import urllib.request
+import urllib.error
 from flask import Flask, request, abort
 from bot import respond
 
@@ -76,7 +77,25 @@ def worker():
             with connect() as db:
                 db.execute('INSERT OR REPLACE INTO sessions(sender,state) VALUES(?,?)', (sender, next_state))
                 db.execute('UPDATE inbox SET status="done" WHERE id=?', (mid,))
-        except Exception:
+        except urllib.error.HTTPError as exc:
+            # Solo códigos numéricos: nunca registrar respuesta cruda ni credenciales.
+            try:
+                error = json.loads(exc.read(65536)).get('error', {})
+            except (ValueError, AttributeError):
+                error = {}
+            code = error.get('code')
+            subcode = error.get('error_subcode')
+            code = code if isinstance(code, int) else 'desconocido'
+            subcode = subcode if isinstance(subcode, int) else 'ninguno'
+            print(f'Error Meta: HTTP={exc.code}, code={code}, subcode={subcode}; reintento pendiente.', flush=True)
+            time.sleep(10)
+        except KeyError as exc:
+            allowed = {'GRAPH_API_VERSION', 'PHONE_NUMBER_ID', 'WHATSAPP_ACCESS_TOKEN'}
+            key = exc.args[0] if exc.args and exc.args[0] in allowed else 'desconocida'
+            print(f'Configuración incompleta: falta {key}; reintento pendiente.', flush=True)
+            time.sleep(10)
+        except Exception as exc:
+            print(f'Error interno: {type(exc).__name__}; reintento pendiente.', flush=True)
             print('Error de envío: revisar conexión o configuración; reintento pendiente.', flush=True)
             time.sleep(10)
 
