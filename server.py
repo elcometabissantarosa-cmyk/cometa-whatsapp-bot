@@ -51,6 +51,9 @@ def receive():
 def send(to, body):
     version = os.environ['GRAPH_API_VERSION']
     phone = os.environ['PHONE_NUMBER_ID']
+    # Ajuste limitado al número de prueba y destinatario verificado.
+    if phone == '1399277469929282' and to == '5493782416860':
+        to = '543782416860'
     payload = {'messaging_product': 'whatsapp', 'to': to, 'type': 'text', 'text': {'body': body}}
     req = urllib.request.Request(f'https://graph.facebook.com/{version}/{phone}/messages', data=json.dumps(payload).encode(), headers={'Authorization': 'Bearer ' + os.environ['WHATSAPP_ACCESS_TOKEN'], 'Content-Type': 'application/json'})
     with urllib.request.urlopen(req, timeout=20) as response:
