@@ -2,15 +2,7 @@
 import unicodedata
 from datetime import datetime
 
-MENU = """¡Hola! 👋🚌 Bienvenido a El Cometa Bis — Boletería Santa Rosa, Corrientes.
-Soy tu asistente virtual.
-1. Comprar pasajes
-2. Consultar destinos y horarios
-3. Encomiendas
-4. Preguntas frecuentes
-5. Atención de un asesor
-Respondé con un número. Escribí MENÚ para volver al inicio.
-✨ El Arte de viajar bien"""
+MENU = '¡Hola! 👋🚌 Bienvenido a El Cometa Bis — Boletería Santa Rosa, Corrientes.\n\n📌 *¿Cómo funciona la atención?*\nPrimero, seleccioná una de las siguientes opciones respondiendo únicamente con el *número correspondiente*:\n1️⃣ *Comprar pasajes*\n2️⃣ *Consultar destinos y horarios*\n3️⃣ *Encomiendas*\n4️⃣ *Preguntas frecuentes*\n5️⃣ *Hablar con un asesor*\n\n🤖 El asistente virtual te irá guiando según la opción seleccionada.\n👤 Si necesitás *atención personalizada*, seleccioná la opción *5*. El bot pausará las respuestas automáticas. La atención de un asesor depende de que la boletería revise este chat.\n⚠️ *Importante:* Para agilizar la atención, evitá enviar varios mensajes seguidos mientras aguardás la respuesta de un asesor.\n🏠 En cualquier momento podés escribir *MENÚ* para volver al menú principal.\n🚀 *Nos encontramos en proceso de modernización para brindarte una atención más rápida, ordenada y eficiente.*\n*El Cometa Bis — Boletería Santa Rosa, Corrientes* 🚌'
 FAQ = """¿Sobre qué querés consultar?
 1. Boleto electrónico
 2. Mascotas
@@ -28,12 +20,14 @@ def respond(state, text):
     state = dict(state or {})
     raw = text.strip()[:1500]
     normalized = ''.join(c for c in unicodedata.normalize('NFD', raw.lower()) if unicodedata.category(c) != 'Mn')
+    if normalized in ('menu', 'inicio'):
+        return {}, MENU
     if state.get('mode') == 'human':
         return state, None
-    if normalized in ('menu', 'inicio', 'hola', 'cancelar'):
+    if normalized in ('hola', 'cancelar'):
         return {}, MENU
     if normalized in ('5', 'asesor', 'persona') and state.get('mode') not in QUESTIONS:
-        return {'mode': 'human'}, 'Tu consulta quedó pendiente de atención de un asesor. Te responderemos según disponibilidad.'
+        return {'mode': 'human'}, 'Las respuestas automáticas están pausadas. La atención de un asesor depende de que la boletería revise este chat. Escribí MENÚ para volver al inicio.'
     mode = state.get('mode')
     if mode == 'faq':
         topics = {'1': 'boleto electrónico', '2': 'mascotas', '3': 'menores', '4': 'devoluciones'}
